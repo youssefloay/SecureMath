@@ -60,18 +60,47 @@ export async function POST(req: NextRequest) {
       await orderRef.update({ viewCount });
     }
 
-    // 4. VdoCipher API Call (Mocked as requested by user)
-    console.log(`[VDOCIPHER MOCK] Generating OTP for Video ID: ${orderData.videoId}`);
-    const mockOtp = `mock-otp-${Date.now()}`;
-    const mockPlaybackInfo = `mock-playbackInfo-${Date.now()}`;
+    // 4. Get Video Metadata for vdoId
+    const videoRef = adminDb.collection('videos').doc(orderData.videoId);
+    const videoDoc = await videoRef.get();
+    
+    if (!videoDoc.exists) {
+      return NextResponse.json({ error: 'Video source not found' }, { status: 404 });
+    }
+    
+    const vdoId = videoDoc.data()?.vdoId;
+    if (!vdoId) {
+      return NextResponse.json({ error: 'Video configuration missing' }, { status: 500 });
+    }
 
-    // Normally we would do:
-    // const response = await fetch('https://api.vdocipher.com/v2/otp', { ...headers ...body })
-    // const data = await response.json()
+    // 5. VdoCipher API Call (Real Implementation)
+    const API_SECRET = process.env.VDOCIPHER_API_SECRET;
+    const ip = req.headers.get('x-forwarded-for') || '0.0.0.0';
+    const email = decodedToken.email;
+
+    const vdoResponse = await fetch(`https://dev.vdocipher.com/api/videos/${vdoId}/otp`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Apisecret ${API_SECRET}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        annotate: `[{"type":"text", "text":"${email}", "alpha":"0.3", "color":"0xFFFFFF", "size":"15", "interval":"5000"}]`,
+        // Or simple text format if preferred:
+        // annotate: `User: ${email} | IP: ${ip}`
+      }),
+    });
+
+    if (!vdoResponse.ok) {
+       console.error('VdoCipher API Error', await vdoResponse.text());
+       return NextResponse.json({ error: 'Video secure gateway error' }, { status: 502 });
+    }
+
+    const { otp, playbackInfo } = await vdoResponse.json();
 
     return NextResponse.json({
-      otp: mockOtp,
-      playbackInfo: mockPlaybackInfo,
+      otp,
+      playbackInfo,
       remainingTimeMs: TWENTY_FOUR_HOURS - (now - activatedAt),
       viewCount,
     }, { status: 200 });

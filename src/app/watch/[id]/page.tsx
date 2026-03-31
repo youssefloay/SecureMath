@@ -3,10 +3,17 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useRouter } from 'next/navigation';
-import { Loader2, AlertTriangle, Clock, ShieldCheck, ArrowLeft, Play, Sparkles, BookOpen } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { 
+  Loader2, AlertTriangle, Clock, ShieldCheck, ArrowLeft, 
+  Play, Sparkles, BookOpen, MessageSquare 
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+
+import { getOrder } from '@/app/actions/orders';
+import { getVideo } from '@/app/actions/videos';
+import { getOrCreateChat } from '@/app/actions/messages';
+import { ChatSystem } from '@/components/messaging/ChatSystem';
 
 function CountdownTimer({ initialRemainingMs }: { initialRemainingMs: number }) {
   const [timeLeft, setTimeLeft] = useState(initialRemainingMs);
@@ -39,6 +46,9 @@ export default function WatchPage({ params }: { params: Promise<{ id: string }> 
   const [otp, setOtp] = useState<string | null>(null);
   const [playbackInfo, setPlaybackInfo] = useState<string | null>(null);
   const [remainingTimeMs, setRemainingTimeMs] = useState<number | null>(null);
+  const [videoData, setVideoData] = useState<any>(null);
+  const [chatId, setChatId] = useState<string | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -53,27 +63,37 @@ export default function WatchPage({ params }: { params: Promise<{ id: string }> 
     const fetchSecureVideo = async () => {
       try {
         const token = await user.getIdToken(true);
-        const res = await fetch('/api/vdocipher', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ orderId: unwrappedParams.id })
-        });
-
-        const data = await res.json();
         
-        if (!res.ok) {
+        const [orderRes, vdoRes] = await Promise.all([
+          getOrder(unwrappedParams.id),
+          fetch('/api/vdocipher', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ orderId: unwrappedParams.id })
+          })
+        ]);
+
+        if (!orderRes.success) throw new Error("Order not found or invalid.");
+        
+        const videoRes = await getVideo(orderRes.data.videoId);
+        if (videoRes.success) {
+           setVideoData(videoRes.data);
+        }
+
+        const data = await vdoRes.json();
+        if (!vdoRes.ok) {
           setErrorMsg(data.error || 'Access Denied');
         } else {
           setOtp(data.otp);
           setPlaybackInfo(data.playbackInfo);
           setRemainingTimeMs(data.remainingTimeMs);
         }
-      } catch (err) {
-        console.error("VdoCipher route error:", err);
-        setErrorMsg('Failed to connect to secure video server.');
+      } catch (err: any) {
+        console.error("Watch page error:", err);
+        setErrorMsg(err.message || 'Failed to connect to secure video server.');
       } finally {
         setLoading(false);
       }
@@ -82,9 +102,19 @@ export default function WatchPage({ params }: { params: Promise<{ id: string }> 
     fetchSecureVideo();
   }, [user, authLoading, unwrappedParams.id, router]);
 
+  const handleAskTeacher = async () => {
+    if (!videoData || !user) return;
+    
+    const result = await getOrCreateChat(user.uid, videoData.teacherId, videoData.id);
+    if (result.success) {
+      setChatId(result.chatId || null);
+      setIsChatOpen(true);
+    }
+  };
+
   if (authLoading || loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white">
+      <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
@@ -92,7 +122,7 @@ export default function WatchPage({ params }: { params: Promise<{ id: string }> 
 
   if (errorMsg) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#fafafa] p-8">
+      <div className="min-h-screen flex items-center justify-center bg-background p-8">
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -118,7 +148,7 @@ export default function WatchPage({ params }: { params: Promise<{ id: string }> 
   }
 
   return (
-    <div className="min-h-screen bg-[#fafafa] pt-32 pb-24 px-8">
+    <div className="min-h-screen bg-background pt-32 pb-24 px-4 md:px-8">
       <div className="mx-auto max-w-6xl">
          
          <div className="flex items-center justify-between mb-10">
@@ -130,10 +160,10 @@ export default function WatchPage({ params }: { params: Promise<{ id: string }> 
                <ArrowLeft className="h-4 w-4" /> Back to Catalog
             </Button>
             
-            <div className="flex items-center gap-4 bg-white px-6 py-3 rounded-[24px] border border-black/[0.03] shadow-sm">
+            <div className="flex items-center gap-4 bg-white dark:bg-card px-6 py-3 rounded-[24px] border border-black/[0.03] dark:border-white/[0.03] shadow-sm">
                <ShieldCheck className="h-5 w-5 text-primary" />
                <span className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Secure Session</span>
-               <div className="h-6 w-px bg-black/[0.05]" />
+               <div className="h-6 w-px bg-black/[0.05] dark:bg-white/[0.05]" />
                <div className="flex items-center gap-3">
                  <Clock className="h-4 w-4 text-[#ff9c5e]" />
                  <CountdownTimer initialRemainingMs={remainingTimeMs || 0} />
@@ -142,27 +172,27 @@ export default function WatchPage({ params }: { params: Promise<{ id: string }> 
          </div>
 
          {/* Video Player HUD */}
-         <div className="app-card border-none bg-white p-2 shadow-2xl shadow-black/[0.05] overflow-hidden">
+         <div className="app-card border-none bg-white dark:bg-card p-2 shadow-2xl shadow-black/[0.05] overflow-hidden">
             <div className="relative aspect-video rounded-[28px] bg-black group overflow-hidden flex items-center justify-center">
                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
                
-               {/* Player Content */}
-               <div className="text-center z-10 px-12">
-                  <motion.div 
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="h-20 w-20 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform cursor-pointer"
-                  >
-                     <Play className="h-8 w-8 text-white fill-white" />
-                  </motion.div>
-                  <p className="text-white/60 font-black tracking-widest uppercase text-xs mb-2">DRM Secure Playback Layer</p>
-                  <p className="text-white/20 font-mono text-[10px] italic">
-                    ID: {playbackInfo?.substring(0, 32)}...
-                  </p>
-               </div>
+               {/* Real VdoCipher Player */}
+               {otp && playbackInfo ? (
+                 <iframe
+                   src={`https://player.vdocipher.com/v2/?otp=${otp}&playbackInfo=${playbackInfo}`}
+                   className="w-full h-full border-0 rounded-[28px] z-10"
+                   allow="encrypted-media"
+                   allowFullScreen
+                 />
+               ) : (
+                 <div className="text-center z-10 px-12">
+                    <Loader2 className="h-12 w-12 animate-spin text-white/20 mx-auto mb-4" />
+                    <p className="text-white/40 font-black tracking-widest uppercase text-xs">Initializing Secure Stream...</p>
+                 </div>
+               )}
 
                {/* Watermark */}
-               <div className="absolute bottom-10 right-10 flex flex-col items-end opacity-20 pointer-events-none select-none">
+               <div className="absolute bottom-10 right-10 flex flex-col items-end opacity-20 pointer-events-none select-none z-20">
                   <div className="flex items-center gap-2 text-white font-black uppercase text-[10px] tracking-widest">
                     <Sparkles className="h-3 w-3" />
                     {user?.email}
@@ -171,39 +201,41 @@ export default function WatchPage({ params }: { params: Promise<{ id: string }> 
                     Secure_Node_V3.1
                   </div>
                </div>
-               
-               {/* 
-                 // Production Iframe Implementation
-                 <iframe 
-                   src={`https://player.vdocipher.com/v2/?otp=${otp}&playbackInfo=${playbackInfo}`}
-                   style={{ border: 0, height: '100%', width: '100%', position: 'absolute', top: 0, left: 0 }}
-                   allow="encrypted-media"
-                   allowFullScreen
-                 />
-               */}
             </div>
 
-            <div className="p-8 flex items-center justify-between bg-white">
+            <div className="p-8 flex flex-col md:flex-row md:items-center justify-between bg-white dark:bg-card gap-6">
                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-2xl bg-muted/50 border border-black/[0.03] flex items-center justify-center">
-                    <BookOpen className="h-6 w-6 text-foreground/20" />
+                  <div className="h-12 w-12 rounded-2xl bg-muted/50 border border-black/[0.03] dark:border-white/[0.03] flex items-center justify-center text-foreground/20">
+                    <BookOpen className="h-6 w-6" />
                   </div>
                   <div>
-                    <h1 className="text-2xl font-black text-foreground">Secure Learning Session</h1>
-                    <p className="text-[10px] font-black uppercase text-foreground/30 tracking-widest">Order Reference: {unwrappedParams.id}</p>
+                    <h1 className="text-xl md:text-2xl font-black text-foreground">{videoData?.title || "Secure Session"}</h1>
+                    <p className="text-[10px] font-black uppercase text-foreground/30 tracking-widest">Teacher: {videoData?.teacherName || "Loading..."}</p>
                   </div>
                </div>
 
-               <div className="flex gap-2">
-                  <Button variant="outline" className="rounded-2xl h-12 px-6 font-bold flex items-center gap-2 border-black/[0.05] hover:bg-black/5">
-                     Take Notes
+               <div className="flex gap-2 w-full md:w-auto">
+                  <Button 
+                    onClick={handleAskTeacher}
+                    className="flex-1 md:flex-none rounded-2xl h-12 px-8 font-black bg-accent text-white shadow-lg shadow-accent/10 flex items-center gap-2"
+                  >
+                     <MessageSquare className="h-4 w-4" /> Ask Teacher
                   </Button>
-                  <Button className="rounded-2xl h-12 px-8 font-black bg-primary text-white shadow-lg shadow-primary/10">
+                  <Button className="flex-1 md:flex-none rounded-2xl h-12 px-8 font-black bg-primary text-white shadow-lg shadow-primary/10">
                      Next Lesson
                   </Button>
                </div>
             </div>
          </div>
+
+         {/* Chat Interface */}
+         {chatId && (
+            <ChatSystem 
+              chatId={chatId} 
+              isOpen={isChatOpen} 
+              onClose={() => setIsChatOpen(false)} 
+            />
+         )}
 
          <div className="mt-12 text-center opacity-10">
             <div className="flex items-center justify-center gap-4 text-[10px] font-black uppercase tracking-[0.4em]">

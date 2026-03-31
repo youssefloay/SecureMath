@@ -7,8 +7,12 @@ import { VideoDoc } from '@/types';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { Loader2, PlayCircle, Lock, Sparkles, GraduationCap, ArrowRight, BookOpen, Clock, Play, Search, Menu, Filter } from 'lucide-react';
+import { 
+  PlayCircle, Lock, Sparkles, GraduationCap, ArrowRight, 
+  BookOpen, Clock, Play, Search, Menu, Filter 
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function HomePage() {
   const [videos, setVideos] = useState<VideoDoc[]>([]);
@@ -58,10 +62,35 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-          <p className="text-foreground/20 font-black tracking-widest text-xs uppercase animate-pulse">Initializing Platform...</p>
+      <div className="min-h-screen bg-background pt-32 pb-24 px-8">
+        <div className="mx-auto max-w-6xl">
+           <div className="flex items-center justify-between mb-16">
+              <div className="flex items-center gap-4">
+                 <Skeleton className="h-16 w-16 rounded-[24px]" />
+                 <div className="space-y-2">
+                    <Skeleton className="h-3 w-20" />
+                    <Skeleton className="h-8 w-48" />
+                 </div>
+              </div>
+              <div className="flex gap-3">
+                 <Skeleton className="h-12 w-12 rounded-2xl" />
+                 <Skeleton className="h-12 w-12 rounded-2xl" />
+              </div>
+           </div>
+
+           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+              {[1, 2, 3, 4].map(i => (
+                <Skeleton key={i} className="aspect-square rounded-[40px]" />
+              ))}
+           </div>
+
+           <Skeleton className="w-full h-40 rounded-[32px] mb-12" />
+
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {[1, 2, 3, 4].map(i => (
+                <Skeleton key={i} className="h-44 rounded-[32px]" />
+              ))}
+           </div>
         </div>
       </div>
     );
@@ -75,14 +104,14 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="min-h-screen pt-32 pb-24 px-8">
+    <div className="min-h-screen bg-background pt-32 pb-24 px-4 md:px-8 transition-colors duration-500">
       <div className="mx-auto max-w-6xl">
         
         {/* Profile & Greeting Section */}
         <div className="flex items-center justify-between mb-16">
           <div className="flex items-center gap-4">
             <div className="h-16 w-16 rounded-[24px] bg-gradient-to-br from-primary to-accent p-1 shadow-xl shadow-primary/20">
-               <div className="h-full w-full rounded-[20px] bg-white flex items-center justify-center overflow-hidden border border-black/[0.05]">
+               <div className="h-full w-full rounded-[20px] bg-white dark:bg-card flex items-center justify-center overflow-hidden border border-black/[0.05] dark:border-white/[0.05]">
                   <div className="text-xl font-black text-primary">
                     {user?.email?.charAt(0).toUpperCase() || 'S'}
                   </div>
@@ -90,15 +119,15 @@ export default function HomePage() {
             </div>
             <div>
               <p className="text-sm font-bold text-foreground/40 mb-1 leading-none uppercase tracking-widest">Let's learn</p>
-              <h1 className="text-title leading-tight text-foreground">something new</h1>
+              <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-foreground leading-tight">something new</h1>
             </div>
           </div>
           
           <div className="flex items-center gap-3">
-             <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl border-black/[0.05] hover:bg-black/[0.02]">
+             <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl border-black/[0.05] dark:border-white/[0.05] hover:bg-black/[0.02] dark:hover:bg-white/[0.02]">
                 <Search className="h-5 w-5 text-foreground/40" />
              </Button>
-             <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl border-black/[0.05] hover:bg-black/[0.02]">
+             <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl border-black/[0.05] dark:border-white/[0.05] hover:bg-black/[0.02] dark:hover:bg-white/[0.02]">
                 <Menu className="h-5 w-5 text-foreground/40" />
              </Button>
           </div>
@@ -125,13 +154,12 @@ export default function HomePage() {
         </div>
 
         {/* Advanced Filter Suite */}
-        <div className="mb-12 flex flex-col gap-6 bg-white rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.03)] border border-black/[0.02]">
+        <div className="mb-12 flex flex-col gap-6 bg-white dark:bg-card rounded-[32px] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.03)] border border-black/[0.02] dark:border-white/[0.02]">
           <div className="flex items-center gap-2 text-foreground/40 font-black text-xs uppercase tracking-widest pl-1">
              <Filter className="h-4 w-4" />
              Refine your search
           </div>
           <div className="flex flex-wrap gap-x-12 gap-y-6">
-            {/* Subject Filter */}
             <div className="space-y-3">
                <p className="text-[10px] font-black uppercase text-foreground/30 tracking-wider">Subject</p>
                <div className="flex flex-wrap gap-2">
@@ -140,7 +168,7 @@ export default function HomePage() {
                      key={`sub-${subject}-${idx}`}
                      onClick={() => setSelectedSubject(subject)}
                      className={`px-4 py-2 rounded-xl text-xs font-black transition-all border ${
-                       selectedSubject === subject ? 'bg-[#ff9c5e] text-white border-[#ff9c5e] shadow-lg shadow-[#ff9c5e]/20' : 'bg-muted/50 border-black/[0.03] hover:bg-muted text-foreground/40'
+                       selectedSubject === subject ? 'bg-[#ff9c5e] text-white border-[#ff9c5e] shadow-lg shadow-[#ff9c5e]/20' : 'bg-muted/50 border-black/[0.03] dark:border-white/[0.03] hover:bg-muted text-foreground/40'
                      }`}
                    >
                      {subject}
@@ -149,7 +177,6 @@ export default function HomePage() {
                </div>
             </div>
 
-            {/* Grade Filter */}
             <div className="space-y-3">
                <p className="text-[10px] font-black uppercase text-foreground/30 tracking-wider">Class Grade</p>
                <div className="flex flex-wrap gap-2">
@@ -158,7 +185,7 @@ export default function HomePage() {
                      key={`grade-${grade}-${idx}`}
                      onClick={() => setSelectedGrade(grade)}
                      className={`px-4 py-2 rounded-xl text-xs font-black transition-all border ${
-                       selectedGrade === grade ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-muted/50 border-black/[0.03] hover:bg-muted text-foreground/40'
+                       selectedGrade === grade ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-muted/50 border-black/[0.03] dark:border-white/[0.03] hover:bg-muted text-foreground/40'
                      }`}
                    >
                      {grade}
@@ -167,7 +194,6 @@ export default function HomePage() {
                </div>
             </div>
 
-            {/* Course Type Filter */}
             <div className="space-y-3">
                <p className="text-[10px] font-black uppercase text-foreground/30 tracking-wider">Type</p>
                <div className="flex flex-wrap gap-2">
@@ -176,7 +202,7 @@ export default function HomePage() {
                      key={`type-${type}-${idx}`}
                      onClick={() => setSelectedType(type)}
                      className={`px-4 py-2 rounded-xl text-xs font-black transition-all border ${
-                       selectedType === type ? 'bg-[#9596ff] text-white border-[#9596ff] shadow-lg shadow-[#9596ff]/20' : 'bg-muted/50 border-black/[0.03] hover:bg-muted text-foreground/40'
+                       selectedType === type ? 'bg-[#9596ff] text-white border-[#9596ff] shadow-lg shadow-[#9596ff]/20' : 'bg-muted/50 border-black/[0.03] dark:border-white/[0.03] hover:bg-muted text-foreground/40'
                      }`}
                    >
                      {type}
@@ -201,7 +227,7 @@ export default function HomePage() {
                 whileHover={{ scale: 1.02 }}
                 className="flex-shrink-0 w-80 app-card p-6 flex items-center gap-4 cursor-pointer group"
               >
-                <div className="h-16 w-16 rounded-[20px] bg-muted flex items-center justify-center text-primary font-black text-xl border border-black/[0.03] shadow-inner">
+                <div className="h-16 w-16 rounded-[20px] bg-muted flex items-center justify-center text-primary font-black text-xl border border-black/[0.03] dark:border-white/[0.03] shadow-inner">
                   {teacher.name?.charAt(0)}
                 </div>
                 <div className="flex-1">
@@ -217,8 +243,8 @@ export default function HomePage() {
         {/* Course Catalog List */}
         <div className="mb-20">
           <div className="flex items-center justify-between mb-10">
-            <h2 className="text-2xl font-black text-foreground">Catalog — {selectedSubject}</h2>
-            <div className="h-10 w-10 rounded-2xl bg-muted/50 border border-black/[0.03] flex items-center justify-center">
+            <h2 className="text-xl md:text-2xl font-black text-foreground italic">Catalog — {selectedSubject}</h2>
+            <div className="h-10 w-10 rounded-2xl bg-muted/50 border border-black/[0.03] dark:border-white/[0.03] flex items-center justify-center">
               <BookOpen className="h-5 w-5 text-foreground/30" />
             </div>
           </div>
@@ -233,14 +259,14 @@ export default function HomePage() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ delay: index * 0.05 }}
-                  className="app-card overflow-hidden group cursor-pointer"
+                  className="app-card overflow-hidden group cursor-pointer bg-white dark:bg-card border-none"
                   onClick={() => {
                     if (!user) router.push('/signup');
                     else router.push(`/checkout/${video.id}`);
                   }}
                 >
                   <div className="flex p-6 gap-6">
-                    <div className={`h-32 w-32 rounded-[32px] shrink-0 border-white shadow-xl shadow-black/5 flex flex-col items-center justify-center text-white relative group-hover:scale-110 transition-transform duration-500 ${
+                    <div className={`h-32 w-32 rounded-[32px] shrink-0 border-white shadow-xl shadow-black/10 flex flex-col items-center justify-center text-white relative group-hover:scale-110 transition-transform duration-500 ${
                       video.subject === 'Math' ? 'bg-[#ff9c5e]' :
                       video.subject === 'Physics' ? 'bg-[#ffd36a]' :
                       video.subject === 'French' ? 'bg-[#9596ff]' : 'bg-[#4facfe]'
@@ -252,25 +278,25 @@ export default function HomePage() {
                     <div className="flex flex-col justify-center flex-1 pr-6">
                       <div className="flex items-center gap-2 mb-2">
                          <span className="text-[10px] font-black uppercase text-primary tracking-widest">{video.courseType}</span>
-                         <div className="h-1 w-1 rounded-full bg-black/10" />
+                         <div className="h-1 w-1 rounded-full bg-black/10 dark:bg-white/10" />
                          <span className="text-[10px] font-black uppercase text-foreground/50 tracking-widest">{video.subject}</span>
                       </div>
-                      <h3 className="text-xl font-black text-foreground mb-2 leading-snug group-hover:text-primary transition-colors">
+                      <h3 className="text-lg md:text-xl font-black text-foreground mb-2 leading-snug group-hover:text-primary transition-colors">
                         {video.title}
                       </h3>
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 opacity-60">
-                         <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-foreground/60">
+                         <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-foreground/60">
                            <Clock className="h-3 w-3" />
                            24h ACCESS
                          </div>
-                         <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-foreground/60">
+                         <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-foreground/60">
                            <Lock className="h-3 w-3" />
                            LIMITED VIEW
                          </div>
                       </div>
                     </div>
                     
-                    <div className="h-10 w-10 rounded-full border border-black/[0.05] flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
+                    <div className="h-10 w-10 rounded-full border border-black/[0.05] dark:border-white/[0.05] flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
                       <ArrowRight className="h-4 w-4" />
                     </div>
                   </div>

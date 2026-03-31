@@ -32,3 +32,14 @@ export async function deleteVideo(id: string) {
     return { success: false, error: error.message };
   }
 }
+export async function getVideo(id: string) {
+  try {
+    if (!adminDb) return { success: false, error: "Admin SDK not configured." };
+    const doc = await adminDb.collection('videos').doc(id).get();
+    if (!doc.exists) return { success: false, error: "Video not found." };
+    return { success: true, data: { id: doc.id, ...doc.data() } as VideoDoc };
+  } catch (error: any) {
+    console.error("Error fetching video:", error);
+    return { success: false, error: error.message };
+  }
+}

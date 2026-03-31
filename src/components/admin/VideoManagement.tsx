@@ -1,23 +1,28 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase/clientApp';
+import { useAuth } from '@/components/providers/AuthProvider';
 import { VideoDoc } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Plus, Video, Trash2, Tag, BookOpen, GraduationCap, PlaySquare, DollarSign, TextQuote, ChevronRight } from 'lucide-react';
+import { Loader2, Plus, Video, Trash2, Tag, GraduationCap, PlaySquare, DollarSign, UploadCloud, CheckCircle2 } from 'lucide-react';
 import { addVideo, deleteVideo } from '@/app/actions/videos';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 export function VideoManagement() {
+  const { user, userData } = useAuth();
   const [videos, setVideos] = useState<VideoDoc[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   
   const [formData, setFormData] = useState<Omit<VideoDoc, 'id'>>({
     title: '',
@@ -34,7 +39,19 @@ export function VideoManagement() {
   });
 
   useEffect(() => {
-    const q = query(collection(db, 'videos'), orderBy('createdAt', 'desc'));
+    if (!userData) return;
+
+    let q;
+    if (userData.role === 'ADMIN') {
+      q = query(collection(db, 'videos'), orderBy('createdAt', 'desc'));
+    } else {
+      q = query(
+        collection(db, 'videos'), 
+        where('teacherId', '==', user?.uid),
+        orderBy('createdAt', 'desc')
+      );
+    }
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as VideoDoc));
       setVideos(docs);
@@ -42,18 +59,100 @@ export function VideoManagement() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [user, userData]);
+
+  const handleFileUpload = async () => {
+    if (!selectedFile || !user) return;
+    
+    setUploading(true);
+    setUploadProgress(10);
+    
+    try {
+      const token = await user.getIdToken();
+      
+      // 1. Get Upload Credentials
+      const initRes = await fetch('/api/vdocipher/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ title: formData.title || selectedFile.name })
+      });
+
+      if (!initRes.ok) throw new Error("Failed to initialize upload");
+      
+      const { video_id, clientPayload } = await initRes.json();
+      setUploadProgress(30);
+
+      // 2. Upload to S3 (VdoCipher)
+      const uploadData = new FormData();
+      
+      // S3 requires specific field order: all policy/auth fields first, then file
+      const fields = [
+        'policy', 'key', 'x-amz-signature', 'x-amz-algorithm', 
+        'x-amz-date', 'x-amz-credential', 'success_action_status', 
+        'x-amz-meta-videoid'
+      ];
+
+      fields.forEach(field => {
+        if (clientPayload[field]) {
+          uploadData.append(field, clientPayload[field]);
+        }
+      });
+      
+      uploadData.append('file', selectedFile);
+
+      const uploadRes = await fetch(clientPayload.upload_link_secure, {
+        method: 'POST',
+        body: uploadData,
+      });
+
+      if (!uploadRes.ok) throw new Error("Video upload failed");
+
+      setUploadProgress(100);
+      setFormData(prev => ({ ...prev, vdoId: video_id }));
+      toast.success("Video uploaded successfully!");
+      setSelectedFile(null);
+      
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      toast.error(error.message || "Upload failed");
+    } finally {
+      setTimeout(() => {
+        setUploading(false);
+        setUploadProgress(0);
+      }, 1000);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user || !userData) return;
+    
+    if (!formData.vdoId) {
+       toast.error("Please upload a video or provide a VdoCipher ID");
+       return;
+    }
+
     setSubmitting(true);
-    const result = await addVideo(formData);
+    
+    // Automatically set teacher identity for security
+    const finalData = {
+       ...formData,
+       teacherId: user.uid,
+       teacherName: userData.name || "Staff Member",
+       category: formData.subject, // Map subject to category for sorting
+    };
+
+    const result = await addVideo(finalData);
     if (result.success) {
       toast.success("Course published!");
-      setShowStatus(false);
+      setShowForm(false);
       setFormData({
         title: '', description: '', price: 0, vdoId: '', teacherId: '', teacherName: '', teacherBio: '', category: '', grade: '', courseType: '', subject: ''
       });
+      setSelectedFile(null);
     } else {
       toast.error(result.error);
     }
@@ -112,19 +211,73 @@ export function VideoManagement() {
                  </div>
               </div>
 
-              <div className="space-y-2">
-                 <Label className="text-[10px] font-black uppercase text-foreground/40 ml-1">VdoCipher ID</Label>
-                 <div className="relative">
-                   <Video className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/20" />
-                   <Input 
-                     required
-                     className="h-14 md:h-12 pl-11 rounded-xl bg-white border-black/[0.05] shadow-inner font-mono font-bold"
-                     value={formData.vdoId}
-                     onChange={(e) => setFormData({ ...formData, vdoId: e.target.value })}
-                     placeholder="vdo_id_..."
-                   />
-                 </div>
-              </div>
+               <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase text-foreground/40 ml-1">Video Asset</Label>
+                    <div className="flex flex-col gap-3">
+                      <div className="relative group">
+                        <input 
+                          type="file" 
+                          id="video-upload" 
+                          accept="video/*" 
+                          className="hidden" 
+                          onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                        />
+                        <label 
+                          htmlFor="video-upload"
+                          className="flex flex-col items-center justify-center border-2 border-dashed border-black/[0.05] rounded-2xl h-32 cursor-pointer hover:bg-black/[0.01] transition-all group-hover:border-primary/20"
+                        >
+                          {selectedFile ? (
+                            <div className="flex flex-col items-center gap-2">
+                               <CheckCircle2 className="h-6 w-6 text-green-500" />
+                               <span className="text-[10px] font-black uppercase max-w-[150px] truncate">{selectedFile.name}</span>
+                               <span className="text-[8px] font-bold opacity-30">Change File</span>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center gap-2">
+                               <UploadCloud className="h-6 w-6 text-foreground/20" />
+                               <span className="text-[10px] font-black uppercase text-foreground/40">Select Video File</span>
+                            </div>
+                          )}
+                        </label>
+                      </div>
+
+                      {selectedFile && !formData.vdoId && (
+                         <Button 
+                           type="button"
+                           onClick={handleFileUpload}
+                           disabled={uploading}
+                           className="h-12 rounded-xl bg-orange-500 text-white font-black text-[10px] uppercase tracking-widest shadow-lg shadow-orange-500/20"
+                         >
+                           {uploading ? `Uploading ${uploadProgress}%` : 'Upload to VdoCipher'}
+                         </Button>
+                      )}
+
+                      {uploading && (
+                         <div className="w-full bg-black/5 h-1 rounded-full overflow-hidden">
+                            <div 
+                              className="bg-primary h-full transition-all duration-300" 
+                              style={{ width: `${uploadProgress}%` }}
+                            />
+                         </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                     <Label className="text-[10px] font-black uppercase text-foreground/40 ml-1">VdoCipher ID (Auto-filled)</Label>
+                     <div className="relative">
+                       <Video className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/20" />
+                       <Input 
+                         required
+                         className="h-14 md:h-12 pl-11 rounded-xl bg-white border-black/[0.05] shadow-inner font-mono font-bold"
+                         value={formData.vdoId}
+                         onChange={(e) => setFormData({ ...formData, vdoId: e.target.value })}
+                         placeholder="vdo_id_..."
+                       />
+                     </div>
+                  </div>
+               </div>
 
               <div className="space-y-2">
                  <Label className="text-[10px] font-black uppercase text-foreground/40 ml-1">Grade Level</Label>

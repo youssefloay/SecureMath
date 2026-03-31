@@ -12,12 +12,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Eye, ShieldCheck, XCircle, Users, Video, ShoppingCart, TrendingUp, Plus, Calendar, Hash } from 'lucide-react';
+import { Loader2, Eye, ShieldCheck, XCircle, Users, Video, ShoppingCart, TrendingUp, Plus, Calendar, Hash, BarChart3, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Import our new modules
 import { TeacherManagement } from '@/components/admin/TeacherManagement';
 import { VideoManagement } from '@/components/admin/VideoManagement';
+import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
+import { TeacherChatManager } from '@/components/messaging/TeacherChatManager';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DashboardPage() {
   const { user, userData, loading: authLoading } = useAuth();
@@ -60,8 +63,21 @@ export default function DashboardPage() {
 
   if (authLoading || dataLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      <div className="min-h-screen bg-background pt-32 pb-20 px-8">
+        <div className="mx-auto max-w-7xl">
+           <div className="flex flex-col md:flex-row justify-between mb-12 gap-8">
+              <div className="space-y-4">
+                 <Skeleton className="h-3 w-32" />
+                 <Skeleton className="h-10 w-64" />
+              </div>
+              <div className="flex gap-4">
+                 <Skeleton className="h-24 w-32 md:w-48 rounded-[24px]" />
+                 <Skeleton className="h-24 w-32 md:w-48 rounded-[24px]" />
+              </div>
+           </div>
+           <Skeleton className="h-14 w-full md:w-[600px] rounded-2xl mb-10" />
+           <Skeleton className="h-[500px] w-full rounded-[32px]" />
+        </div>
       </div>
     );
   }
@@ -73,7 +89,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fafafa] pt-32 pb-20 px-4 md:px-8">
+    <div className="min-h-screen bg-background pt-32 pb-20 px-4 md:px-8">
       <div className="mx-auto max-w-7xl">
         
         {/* Responsive Dashboard Header */}
@@ -89,7 +105,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-4 w-full md:w-auto">
-            <div className="app-card px-6 py-4 md:px-8 md:py-5 border-none shadow-xl shadow-black/[0.02] flex flex-col justify-center">
+            <div className="app-card px-6 py-4 md:px-8 md:py-5 border-none shadow-xl shadow-black/[0.02] dark:shadow-white/[0.02] flex flex-col justify-center">
                <p className="text-[9px] font-black uppercase text-foreground/30 tracking-widest mb-1">Students</p>
                <span className="text-xl md:text-2xl font-black text-foreground">{stats.students}</span>
             </div>
@@ -102,11 +118,19 @@ export default function DashboardPage() {
 
         {/* Master Tabs - Now scrollable on mobile */}
         <Tabs defaultValue="orders" className="w-full">
-          <TabsList className="bg-white rounded-2xl md:rounded-[24px] p-1 h-14 border border-black/[0.03] shadow-inner mb-10 w-full md:w-fit flex overflow-x-auto scrollbar-hide no-scrollbar flex-nowrap">
+          <TabsList className="bg-white dark:bg-card rounded-2xl md:rounded-[24px] p-1 h-14 border border-black/[0.03] dark:border-white/[0.03] shadow-inner mb-10 w-full md:w-fit flex overflow-x-auto scrollbar-hide no-scrollbar flex-nowrap gap-1">
             <TabsTrigger value="orders" className="shrink-0 rounded-xl md:rounded-2xl px-6 md:px-8 h-full data-[state=active]:bg-primary data-[state=active]:text-white font-black text-[10px] uppercase tracking-widest flex items-center gap-2">
               <ShoppingCart className="h-4 w-4" />
               Orders
               {stats.pending > 0 && <span className="bg-red-500 text-white text-[8px] px-2 py-0.5 rounded-full">{stats.pending}</span>}
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="shrink-0 rounded-xl md:rounded-2xl px-6 md:px-8 h-full data-[state=active]:bg-primary data-[state=active]:text-white font-black text-[10px] uppercase tracking-widest flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Analytics
+            </TabsTrigger>
+            <TabsTrigger value="messages" className="shrink-0 rounded-xl md:rounded-2xl px-6 md:px-8 h-full data-[state=active]:bg-primary data-[state=active]:text-white font-black text-[10px] uppercase tracking-widest flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Messages
             </TabsTrigger>
             <TabsTrigger value="videos" className="shrink-0 rounded-xl md:rounded-2xl px-6 md:px-8 h-full data-[state=active]:bg-primary data-[state=active]:text-white font-black text-[10px] uppercase tracking-widest flex items-center gap-2">
               <Video className="h-4 w-4" />
@@ -119,6 +143,14 @@ export default function DashboardPage() {
               </TabsTrigger>
             )}
           </TabsList>
+
+          <TabsContent value="analytics" className="focus-visible:outline-none">
+            <AnalyticsDashboard />
+          </TabsContent>
+
+          <TabsContent value="messages" className="focus-visible:outline-none">
+            <TeacherChatManager />
+          </TabsContent>
 
           {/* Orders Management */}
           <TabsContent value="orders" className="focus-visible:outline-none">

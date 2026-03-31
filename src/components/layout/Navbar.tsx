@@ -1,26 +1,31 @@
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, LogOut, BookOpen, Database, User as UserIcon, Search, Menu } from 'lucide-react';
+import { LayoutDashboard, LogOut, BookOpen, Database, User as UserIcon, Search, Menu, Sun, Moon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTheme } from 'next-themes';
 
 export function Navbar() {
   const { user, userData, logout } = useAuth();
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
   const router = useRouter();
 
-  const handleSeed = () => {
-    router.push('/seed-data');
-  };
+  // Handle hydration mismatch
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 flex justify-center px-6 pt-6">
       <motion.nav 
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="flex h-16 w-full max-w-6xl items-center justify-between rounded-[24px] bg-white/80 backdrop-blur-xl border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] px-6"
+        className="flex h-16 w-full max-w-6xl items-center justify-between rounded-[24px] bg-white/80 dark:bg-card/80 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] px-6"
       >
         <div className="flex items-center gap-10">
           <Link href="/" className="flex items-center gap-2 text-xl font-black">
@@ -31,20 +36,20 @@ export function Navbar() {
           </Link>
           
           <div className="hidden md:flex items-center gap-6">
-            <Link href="/" className="text-sm font-bold text-foreground/60 hover:text-primary transition-colors">
+            <Link href="/" className="text-sm font-bold text-foreground/60 dark:text-foreground/40 hover:text-primary transition-colors">
               Courses
             </Link>
-            <Link href="/" className="text-sm font-bold text-foreground/60 hover:text-primary transition-colors">
+            <Link href="/" className="text-sm font-bold text-foreground/60 dark:text-foreground/40 hover:text-primary transition-colors">
               Planning
             </Link>
-            <Link href="/" className="text-sm font-bold text-foreground/60 hover:text-primary transition-colors">
+            <Link href="/" className="text-sm font-bold text-foreground/60 dark:text-foreground/40 hover:text-primary transition-colors">
               Mentors
             </Link>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center bg-muted/50 rounded-full px-4 py-2 border border-black/[0.03]">
+          <div className="hidden sm:flex items-center bg-muted/50 rounded-full px-4 py-2 border border-black/[0.03] dark:border-white/[0.03]">
              <Search className="h-4 w-4 text-foreground/30 mr-2" />
              <input 
                type="text" 
@@ -53,7 +58,16 @@ export function Navbar() {
              />
           </div>
 
-          <div className="h-8 w-px bg-black/[0.05] mx-2 hidden sm:block" />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="h-10 w-10 rounded-2xl text-foreground/40 hover:bg-primary/5 transition-colors"
+          >
+            {mounted && (theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />)}
+          </Button>
+
+          <div className="h-8 w-px bg-black/[0.1] dark:bg-white/[0.1] mx-2 hidden sm:block" />
 
           <AnimatePresence mode="wait">
             {user ? (

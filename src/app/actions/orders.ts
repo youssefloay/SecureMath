@@ -12,15 +12,24 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus, st
     });
 
     if (status === 'APPROVED') {
-      // PHASE 5: Implementation (Mocking Resend API for now)
-      console.log(`[RESEND API MOCK] Sending 'Order Approved' email to ${studentEmail}`);
-      console.log(`Email Body: Your lesson is ready. Warning: You have 24 hours and 2 views starting from your first click on the video.`);
-      // actual Resend implementation would go here once paid
+      const { sendApprovalEmail } = await import('@/lib/resend');
+      await sendApprovalEmail(studentEmail, orderId);
     }
     
     return { success: true };
   } catch (error) {
     console.error('Error updating order:', error);
     return { success: false, error: 'Failed to update order status' };
+  }
+}
+export async function getOrder(id: string) {
+  try {
+    if (!adminDb) return { success: false, error: "Admin SDK not configured." };
+    const doc = await adminDb.collection('orders').doc(id).get();
+    if (!doc.exists) return { success: false, error: "Order not found." };
+    return { success: true, data: { id: doc.id, ...doc.data() } as any };
+  } catch (error: any) {
+    console.error("Error fetching order:", error);
+    return { success: false, error: error.message };
   }
 }

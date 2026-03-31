@@ -72,12 +72,43 @@
   --radius: 1.5rem; /* Large border radius as in reference */
 }
 
+.dark {
+  /* Premium Midnight App-Style */
+  --background: oklch(0.12 0.02 260); 
+  --foreground: oklch(0.95 0.01 260);
+  
+  --card: oklch(0.16 0.03 260); 
+  --card-foreground: oklch(0.95 0.01 260);
+  
+  --popover: oklch(0.14 0.03 260);
+  --popover-foreground: oklch(0.95 0.01 260);
+  
+  --primary: oklch(0.65 0.22 260); /* Brighter Indigo for Dark */
+  --primary-foreground: oklch(1 0 0);
+  
+  --secondary: oklch(0.2 0.03 260);
+  --secondary-foreground: oklch(0.95 0.01 260);
+  
+  --muted: oklch(0.18 0.03 260);
+  --muted-foreground: oklch(0.6 0.02 260);
+  
+  --accent: oklch(0.75 0.22 45); /* High-Neon Orange */
+  --accent-foreground: oklch(0.1 0 0);
+  
+  --destructive: oklch(0.5 0.2 25);
+  --destructive-foreground: oklch(1 0 0);
+  
+  --border: oklch(0.25 0.03 260);
+  --input: oklch(0.2 0.03 260);
+  --ring: oklch(0.65 0.22 260 / 40%);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground selection:bg-primary/20 antialiased;
+    @apply bg-background text-foreground selection:bg-primary/20 antialiased transition-colors duration-500;
   }
   html {
     @apply font-sans scroll-smooth;
@@ -86,7 +117,7 @@
 
 @layer utilities {
   .app-card {
-    @apply bg-white rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-black/[0.02] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-500;
+    @apply bg-card rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_20px_60px_rgb(0,0,0,0.4)] border border-border hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-500;
   }
   
   .vibrant-orange { background-color: oklch(0.7 0.18 45); }
