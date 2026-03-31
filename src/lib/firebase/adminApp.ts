@@ -2,6 +2,7 @@ import * as admin from 'firebase-admin';
 
 if (!admin.apps.length) {
   try {
+    console.log('Initializing Firebase Admin with bucket:', process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET);
     admin.initializeApp({
       credential: admin.credential.cert({
         projectId: process.env.FIREBASE_PROJECT_ID,

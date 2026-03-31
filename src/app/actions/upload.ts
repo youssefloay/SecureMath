@@ -1,6 +1,7 @@
 'use server';
 
-import { adminDb, adminStorage } from '@/lib/firebase/adminApp';
+import { adminDb } from '@/lib/firebase/adminApp';
+import cloudinary from '@/lib/cloudinary';
 import { OrderDoc } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -17,29 +18,33 @@ export async function uploadReceipt(formData: FormData) {
       return { success: false, error: "Missing required fields." };
     }
 
-    if (!adminStorage || !adminDb) {
-      return { success: false, error: "Storage not configured." };
+    if (!adminDb) {
+      return { success: false, error: "Database not configured." };
     }
 
     // 1. Generate Order ID
     const orderId = uuidv4();
-    const fileName = `proofs/${userId}/${orderId}.jpg`;
     
-    // 2. Upload to Firebase Storage via Admin SDK (Bypass CORS)
-    const bucket = adminStorage.bucket();
-    const blob = bucket.file(fileName);
+    // 2. Upload to Cloudinary
     const buffer = Buffer.from(await file.arrayBuffer());
-
-    await blob.save(buffer, {
-      contentType: file.type,
-      metadata: {
-        firebaseStorageDownloadTokens: uuidv4(),
-      }
+    
+    const cloudinaryResponse: any = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: `proofs/${userId}`,
+          public_id: orderId,
+          resource_type: 'image',
+          transformation: [{ quality: 'auto', fetch_format: 'auto' }]
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      uploadStream.end(buffer);
     });
 
-    // Generate a public URL (or use the firebase-admin convention)
-    // Note: For simplicity in this dev phase, we'll use a direct link format
-    const screenshotUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(fileName)}?alt=media`;
+    const screenshotUrl = cloudinaryResponse.secure_url;
 
     // 3. Create Order Doc
     const newOrder: OrderDoc = {
