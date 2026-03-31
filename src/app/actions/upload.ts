@@ -63,6 +63,18 @@ export async function uploadReceipt(formData: FormData) {
 
     await adminDb.collection('orders').doc(orderId).set(newOrder);
 
+    // 4. Send Confirmation Email
+    try {
+      const userDoc = await adminDb.collection('users').doc(userId).get();
+      if (userDoc.exists) {
+        const userData = userDoc.data();
+        const { sendReceiptEmail } = await import('@/lib/mail');
+        await sendReceiptEmail(userData?.email, orderId, userData?.name || 'Student');
+      }
+    } catch (emailError) {
+      console.error("Non-blocking email error:", emailError);
+    }
+
     return { success: true, orderId };
   } catch (error: any) {
     console.error("Upload error:", error);

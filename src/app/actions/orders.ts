@@ -11,9 +11,27 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus, st
       updatedAt: Date.now(),
     });
 
-    if (status === 'APPROVED') {
-      const { sendApprovalEmail } = await import('@/lib/resend');
-      await sendApprovalEmail(studentEmail, orderId);
+    if (status === 'APPROVED' || status === 'REJECTED') {
+      try {
+        const orderDoc = await adminDb.collection('orders').doc(orderId).get();
+        const orderData = orderDoc.data();
+        if (orderData) {
+          const userDoc = await adminDb.collection('users').doc(orderData.userId).get();
+          const videoDoc = await adminDb.collection('videos').doc(orderData.videoId).get();
+          const studentName = userDoc.data()?.name || 'Student';
+          const videoTitle = videoDoc.data()?.title || 'Lesson';
+          
+          const { sendApprovalEmail, sendRejectionEmail } = await import('@/lib/mail');
+          
+          if (status === 'APPROVED') {
+            await sendApprovalEmail(studentEmail, orderId, studentName, videoTitle);
+          } else {
+            await sendRejectionEmail(studentEmail, orderId, studentName, "The screenshot provided was unclear or does not match the transaction details.");
+          }
+        }
+      } catch (emailError) {
+        console.error("Non-blocking email error:", emailError);
+      }
     }
     
     return { success: true };
