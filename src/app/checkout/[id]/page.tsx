@@ -1,16 +1,16 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { doc, getDoc, setDoc, collection } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '@/lib/firebase/clientApp';
-import { VideoDoc, OrderDoc } from '@/types';
+import { doc, getDoc, collection } from 'firebase/firestore';
+import { db } from '@/lib/firebase/clientApp';
+import { VideoDoc } from '@/types';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Loader2, UploadCloud, CheckCircle2, ShieldCheck, ArrowLeft, CreditCard, Sparkles, Copy, Laptop, Smartphone } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Loader2, UploadCloud, CheckCircle2, ShieldCheck, ArrowLeft, Copy, Smartphone, Sparkles } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { uploadReceipt } from '@/app/actions/upload';
 
 export default function CheckoutPage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = React.use(params);
@@ -51,30 +51,22 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
     setSubmitting(true);
 
     try {
-      const newOrderRef = doc(collection(db, 'orders'));
-      const orderId = newOrderRef.id;
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('userId', user.uid);
+      formData.append('videoId', video.id);
+      formData.append('teacherId', video.teacherId);
+      formData.append('price', video.price.toString());
+      formData.append('paymentCode', paymentCode);
 
-      const storageRef = ref(storage, `proofs/${user.uid}/${orderId}.jpg`);
-      await uploadBytes(storageRef, file);
-      const screenshotUrl = await getDownloadURL(storageRef);
+      const result = await uploadReceipt(formData);
 
-      const newOrder: OrderDoc = {
-        id: orderId,
-        userId: user.uid,
-        teacherId: video.teacherId,
-        videoId: video.id,
-        status: 'PENDING',
-        paymentCode,
-        screenshotUrl,
-        activatedAt: null,
-        viewCount: 0,
-        price: video.price,
-        createdAt: Date.now(),
-      };
-
-      await setDoc(newOrderRef, newOrder);
-      setSuccess(true);
-      toast.success("Payment proof submitted for verification!");
+      if (result.success) {
+        setSuccess(true);
+        toast.success("Payment proof submitted for verification!");
+      } else {
+        toast.error(result.error || 'Error submitting payment proof.');
+      }
     } catch (err) {
       console.error(err);
       toast.error('Error submitting payment proof.');
