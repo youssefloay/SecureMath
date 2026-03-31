@@ -7,7 +7,7 @@ import { VideoDoc } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Plus, Video, Trash2, Tag, BookOpen, GraduationCap, PlaySquare, DollarSign, Type } from 'lucide-react';
+import { Loader2, Plus, Video, Trash2, Tag, BookOpen, GraduationCap, PlaySquare, DollarSign, TextQuote, ChevronRight } from 'lucide-react';
 import { addVideo, deleteVideo } from '@/app/actions/videos';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -49,8 +49,8 @@ export function VideoManagement() {
     setSubmitting(true);
     const result = await addVideo(formData);
     if (result.success) {
-      toast.success("Course added to catalog successfully!");
-      setShowForm(false);
+      toast.success("Course published!");
+      setShowStatus(false);
       setFormData({
         title: '', description: '', price: 0, vdoId: '', teacherId: '', teacherName: '', teacherBio: '', category: '', grade: '', courseType: '', subject: ''
       });
@@ -60,24 +60,26 @@ export function VideoManagement() {
     setSubmitting(false);
   };
 
+  const setShowStatus = (val: boolean) => setShowForm(val);
+
   const handleDelete = async (id: string) => {
-    if (confirm("Permanently delete this course? This cannot be undone.")) {
+    if (confirm("Permanently delete this course?")) {
       const result = await deleteVideo(id);
-      if (result.success) toast.success("Course deleted.");
-      else toast.error("Failed to delete course.");
+      if (result.success) toast.success("Course removed.");
+      else toast.error("Delete failed.");
     }
   };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-black text-foreground mb-1">Video Library</h2>
-          <p className="text-xs text-foreground/30 font-bold uppercase tracking-widest leading-none">Catalog management & categorization</p>
+          <p className="text-[10px] text-foreground/30 font-black uppercase tracking-widest leading-none">Catalog management & categorization</p>
         </div>
         <Button 
           onClick={() => setShowForm(!showForm)}
-          className={`rounded-2xl transition-all ${showForm ? 'bg-red-50 text-red-500 hover:bg-red-100' : 'bg-primary text-white shadow-xl shadow-primary/20'}`}
+          className={`rounded-2xl transition-all h-12 md:h-10 px-6 font-black text-[10px] uppercase tracking-widest ${showForm ? 'bg-red-50 text-red-500 hover:bg-red-100' : 'bg-primary text-white shadow-xl shadow-primary/20'}`}
         >
           {showForm ? 'Cancel Operation' : (
             <span className="flex items-center gap-2">
@@ -93,7 +95,7 @@ export function VideoManagement() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="app-card overflow-hidden p-8 border-primary/10 bg-primary/[0.01]"
+            className="app-card overflow-hidden p-6 md:p-8 border-primary/10 bg-primary/[0.01]"
           >
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-2">
@@ -102,7 +104,7 @@ export function VideoManagement() {
                    <PlaySquare className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/20" />
                    <Input 
                      required
-                     className="h-12 pl-11 rounded-xl bg-white border-black/[0.05] shadow-inner font-bold"
+                     className="h-14 md:h-12 pl-11 rounded-xl bg-white border-black/[0.05] shadow-inner font-bold"
                      value={formData.title}
                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                      placeholder="e.g. Calculus: Limits & Continuity"
@@ -116,10 +118,10 @@ export function VideoManagement() {
                    <Video className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/20" />
                    <Input 
                      required
-                     className="h-12 pl-11 rounded-xl bg-white border-black/[0.05] shadow-inner font-mono font-bold"
+                     className="h-14 md:h-12 pl-11 rounded-xl bg-white border-black/[0.05] shadow-inner font-mono font-bold"
                      value={formData.vdoId}
                      onChange={(e) => setFormData({ ...formData, vdoId: e.target.value })}
-                     placeholder="vdo_cipher_id_123"
+                     placeholder="vdo_id_..."
                    />
                  </div>
               </div>
@@ -128,85 +130,38 @@ export function VideoManagement() {
                  <Label className="text-[10px] font-black uppercase text-foreground/40 ml-1">Grade Level</Label>
                  <div className="relative">
                    <GraduationCap className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/20" />
-                   <Input 
-                     required
-                     className="h-12 pl-11 rounded-xl bg-white border-black/[0.05] shadow-inner font-bold"
-                     value={formData.grade}
-                     onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
-                     placeholder="Grade 12"
-                   />
+                   <Input required className="h-14 md:h-12 pl-11 rounded-xl bg-white border-black/[0.05]" value={formData.grade} onChange={(e) => setFormData({...formData, grade: e.target.value})} placeholder="Grade 12"/>
                  </div>
               </div>
 
               <div className="space-y-2">
                  <Label className="text-[10px] font-black uppercase text-foreground/40 ml-1">Subject</Label>
                  <div className="relative">
-                   <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/20" />
-                   <Input 
-                     required
-                     className="h-12 pl-11 rounded-xl bg-white border-black/[0.05] shadow-inner font-bold"
-                     value={formData.subject}
-                     onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                     placeholder="Math"
-                   />
-                 </div>
-              </div>
-
-              <div className="space-y-2">
-                 <Label className="text-[10px] font-black uppercase text-foreground/40 ml-1">Course Type</Label>
-                 <div className="relative">
                    <Tag className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/20" />
-                   <Input 
-                     required
-                     className="h-12 pl-11 rounded-xl bg-white border-black/[0.05] shadow-inner font-bold"
-                     value={formData.courseType}
-                     onChange={(e) => setFormData({ ...formData, courseType: e.target.value })}
-                     placeholder="Revision"
-                   />
+                   <Input required className="h-14 md:h-12 pl-11 rounded-xl bg-white border-black/[0.05]" value={formData.subject} onChange={(e) => setFormData({...formData, subject: e.target.value})} placeholder="Math"/>
                  </div>
-              </div>
-
-              <div className="space-y-2">
-                 <Label className="text-[10px] font-black uppercase text-foreground/40 ml-1">Teacher Name</Label>
-                 <Input 
-                   required
-                   className="h-12 rounded-xl bg-white border-black/[0.05] font-bold"
-                   value={formData.teacherName}
-                   onChange={(e) => setFormData({ ...formData, teacherName: e.target.value })}
-                 />
               </div>
 
               <div className="space-y-2">
                  <Label className="text-[10px] font-black uppercase text-foreground/40 ml-1">Price (EGP)</Label>
                  <div className="relative">
                    <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/20" />
-                   <Input 
-                     required
-                     type="number"
-                     className="h-12 pl-11 rounded-xl bg-white border-black/[0.05] font-bold"
-                     value={formData.price}
-                     onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                   />
+                   <Input required type="number" className="h-14 md:h-12 pl-11 rounded-xl bg-white border-black/[0.05]" value={formData.price} onChange={(e) => setFormData({...formData, price: Number(e.target.value)})}/>
                  </div>
               </div>
 
-              <div className="md:col-span-3 space-y-2">
-                 <Label className="text-[10px] font-black uppercase text-foreground/40 ml-1">Description</Label>
-                 <Input 
-                   required
-                   className="h-12 rounded-xl bg-white border-black/[0.05] font-bold"
-                   value={formData.description}
-                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                 />
+              <div className="md:col-span-3">
+                 <Label className="text-[10px] font-black uppercase text-foreground/40 ml-1">Course Type (e.g. Revision)</Label>
+                 <Input required className="h-14 md:h-12 rounded-xl bg-white border-black/[0.05]" value={formData.courseType} onChange={(e) => setFormData({...formData, courseType: e.target.value})}/>
               </div>
 
-              <div className="md:col-span-3 flex justify-end pt-4">
+              <div className="md:col-span-3 flex justify-end">
                 <Button 
                   type="submit" 
                   disabled={submitting}
-                  className="bg-primary text-white px-10 h-14 rounded-2xl font-black shadow-xl shadow-primary/20"
+                  className="w-full md:w-auto bg-primary text-white px-10 h-14 rounded-2xl font-black shadow-xl shadow-primary/20 text-[10px] uppercase tracking-widest"
                 >
-                  {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Publish Course'}
+                  {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Publish to Catalog'}
                 </Button>
               </div>
             </form>
@@ -214,45 +169,66 @@ export function VideoManagement() {
         )}
       </AnimatePresence>
 
+      {/* Course List: Tabular on Desktop, Card-based on Mobile */}
       <div className="app-card border-none shadow-xl shadow-black/[0.01] overflow-hidden bg-white">
-        <Table>
-          <TableHeader className="bg-muted/30">
-            <TableRow>
-              <TableHead className="py-6 px-8 text-[10px] font-black uppercase tracking-widest text-foreground/40">Topic / Metadata</TableHead>
-              <TableHead className="py-6 text-[10px] font-black uppercase tracking-widest text-foreground/40">Details</TableHead>
-              <TableHead className="py-6 text-[10px] font-black uppercase tracking-widest text-foreground/40">Price</TableHead>
-              <TableHead className="py-6 pr-8 text-right text-[10px] font-black uppercase tracking-widest text-foreground/40">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {videos.map((v) => (
-              <TableRow key={v.id} className="hover:bg-muted/10 transition-colors">
-                <TableCell className="py-6 px-8">
-                  <div className="font-black text-foreground">{v.title}</div>
-                  <div className="flex items-center gap-2 mt-1">
-                     <span className="text-[9px] font-black uppercase tracking-widest bg-primary/10 text-primary px-2 py-0.5 rounded-full">{v.grade}</span>
-                     <span className="text-[9px] font-black uppercase tracking-widest bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">{v.subject}</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <p className="text-xs font-bold text-foreground/40 line-clamp-1">{v.description}</p>
-                  <div className="text-[10px] font-black text-foreground/20 italic mt-1">{v.teacherName}</div>
-                </TableCell>
-                <TableCell className="font-black text-foreground">EGP {v.price}</TableCell>
-                <TableCell className="py-6 pr-8 text-right">
-                   <Button 
-                    variant="ghost" 
-                    size="icon"
-                    onClick={() => handleDelete(v.id)}
-                    className="h-10 w-10 border border-black/[0.03] text-red-500 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TableCell>
+        {/* Desktop View */}
+        <div className="hidden md:block">
+          <Table>
+            <TableHeader className="bg-muted/30">
+              <TableRow>
+                <TableHead className="py-6 px-8 text-[10px] font-black uppercase tracking-widest text-foreground/40">Topic / Metadata</TableHead>
+                <TableHead className="py-6 text-[10px] font-black uppercase tracking-widest text-foreground/40">Price</TableHead>
+                <TableHead className="py-6 pr-8 text-right text-[10px] font-black uppercase tracking-widest text-foreground/40">Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {videos.map((v) => (
+                <TableRow key={v.id} className="hover:bg-muted/10 transition-colors">
+                  <TableCell className="py-6 px-8">
+                    <div className="font-black text-foreground">{v.title}</div>
+                    <div className="flex items-center gap-2 mt-1">
+                       <span className="text-[8px] font-black uppercase tracking-widest bg-primary/10 text-primary px-2 py-0.5 rounded-full">{v.grade}</span>
+                       <span className="text-[8px] font-black uppercase tracking-widest bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">{v.subject}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="font-black text-foreground">EGP {v.price}</TableCell>
+                  <TableCell className="py-6 pr-8 text-right">
+                     <Button variant="ghost" size="icon" onClick={() => handleDelete(v.id)} className="h-10 w-10 text-red-500 hover:bg-red-50">
+                        <Trash2 className="h-4 w-4" />
+                     </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Mobile Card List */}
+        <div className="md:hidden space-y-px">
+           {videos.map((v) => (
+             <div key={v.id} className="flex items-center justify-between p-6 border-b border-black/[0.03] last:border-none">
+                <div className="flex-1 pr-4">
+                   <h4 className="font-black text-foreground text-sm leading-tight mb-1">{v.title}</h4>
+                   <div className="flex items-center gap-2">
+                       <span className="text-[7px] font-black uppercase tracking-widest text-primary/60">{v.grade}</span>
+                       <div className="h-0.5 w-0.5 rounded-full bg-black/10" />
+                       <span className="text-[7px] font-black uppercase tracking-widest text-orange-500/60">{v.subject}</span>
+                   </div>
+                </div>
+                <div className="flex items-center gap-4">
+                   <span className="text-sm font-black text-foreground">EGP {v.price}</span>
+                   <Button variant="ghost" size="icon" onClick={() => handleDelete(v.id)} className="h-10 w-10 text-red-500 bg-red-50/50 rounded-xl">
+                      <Trash2 className="h-4 w-4" />
+                   </Button>
+                </div>
+             </div>
+           ))}
+           {videos.length === 0 && (
+              <div className="py-20 text-center opacity-20 text-[10px] font-black uppercase tracking-widest italic">
+                 Catalog is empty
+              </div>
+           )}
+        </div>
       </div>
     </div>
   );
