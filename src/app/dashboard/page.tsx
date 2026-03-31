@@ -160,11 +160,13 @@ export default function DashboardPage() {
                       <TableCell className="py-6 pr-8 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Dialog>
-                            <DialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-2xl hover:bg-black/5 text-foreground/40">
-                                <Eye className="h-5 w-5" />
-                              </Button>
-                            </DialogTrigger>
+                            <DialogTrigger
+                              render={
+                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-2xl hover:bg-black/5 text-foreground/40">
+                                  <Eye className="h-5 w-5" />
+                                </Button>
+                              }
+                            />
                             <DialogContent className="max-w-xl rounded-[40px] p-10 border-none shadow-2xl">
                               <DialogHeader>
                                 <DialogTitle className="text-2xl font-black">Transaction Receipt</DialogTitle>
@@ -233,11 +235,13 @@ export default function DashboardPage() {
 
                     <div className="flex items-center gap-3">
                        <Dialog>
-                          <DialogTrigger asChild>
-                             <Button className="flex-1 bg-muted/50 hover:bg-muted text-foreground/40 font-black text-[10px] uppercase py-6 rounded-2xl border border-black/[0.02]">
-                                <Eye className="h-4 w-4 mr-2" /> View Proof
-                             </Button>
-                          </DialogTrigger>
+                          <DialogTrigger
+                             render={
+                               <Button className="flex-1 bg-muted/50 hover:bg-muted text-foreground/40 font-black text-[10px] uppercase py-6 rounded-2xl border border-black/[0.02]">
+                                  <Eye className="h-4 w-4 mr-2" /> View Proof
+                               </Button>
+                             }
+                          />
                           <DialogContent className="w-[90vw] max-w-sm rounded-[32px] p-6 border-none shadow-2xl">
                              <DialogHeader>
                                 <DialogTitle className="text-xl font-black">Transfer Receipt</DialogTitle>
