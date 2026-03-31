@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useRouter } from 'next/navigation';
-import { Loader2, AlertTriangle, Clock, ShieldCheck, ArrowLeft, Play, Sparkles } from 'lucide-react';
+import { Loader2, AlertTriangle, Clock, ShieldCheck, ArrowLeft, Play, Sparkles, BookOpen } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
